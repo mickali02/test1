@@ -33,7 +33,7 @@ fetch("./data/card_info.json")
 
 // ------------- TODO #1: Implement Fisher-Yates shuffle -------------
 function shuffle(arr) {
-  // Goal: return a new shuffled copy of arr using Fisher–Yates (in-place) algorithm.
+    // Goal: return a new shuffled copy of arr using Fisher–Yates (in-place) algorithm.
   // Steps:
   // 1) Copy the incoming array (to avoid mutating original).
   // 2) Loop from end -> start. For each index i, pick random j in [0, i].
@@ -41,15 +41,21 @@ function shuffle(arr) {
   // 4) Return the shuffled copy.
   // Your code here ↓
   const copy = [...arr];
-  // TODO: loop i from copy.length - 1 down to 1
+    // TODO: loop i from copy.length - 1 down to 1
   // TODO: generate j = Math.floor(Math.random() * (i + 1))
   // TODO: swap copy[i] and copy[j]
-  return copy; // replace with real shuffled copy
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+  [copy[i], copy[j]] = [copy[j], copy[i]];
+
+
+  }
+  return copy;
 }
 
 // ------------- TODO #2: Deal cards to the DOM -------------
 function dealCards(deck) {
-  // Goal: create DOM nodes for each card and append to .card-table efficiently.
+    // Goal: create DOM nodes for each card and append to .card-table efficiently.
   // Use a DocumentFragment. Card structure:
   // <div class="card" data-name="...">
   //   <div class="back"><img class="back-image" src="./images/<name>.svg" alt="<name>"></div>
@@ -57,20 +63,45 @@ function dealCards(deck) {
   // </div>
   const frag = document.createDocumentFragment();
 
-  // TODO: for...of deck
+    // TODO: for...of deck
   //   - create .card
   //   - set data-name
   //   - create .back with <img>, and .front
   //   - append back & front into .card
   //   - add click listener -> flipCard
   //   - append .card to fragment
+  for (const cardData of deck) {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.dataset.name = cardData.name;
 
-  // TODO: append fragment to cardTable
+    const back = document.createElement('div');
+    back.classList.add('back');
+    
+    const backImage = document.createElement('img');
+    backImage.classList.add('back-image');
+    backImage.src = `./images/${cardData.name}.svg`;
+    backImage.alt = cardData.name;
+    back.appendChild(backImage);
+
+    const front = document.createElement('div');
+    front.classList.add('front');
+
+    card.appendChild(back);
+    card.appendChild(front);
+    card.addEventListener('click', flipCard);
+    
+    frag.appendChild(card);
+  }
+
+  cardTable.appendChild(frag);
+    // TODO: append fragment to cardTable
+
 }
 
 // ------------- TODO #3: Flip logic & guarding -------------
 function flipCard() {
-  // Requirements:
+    // Requirements:
   // - If noFlipping is true, ignore clicks.
   // - Add class "flipped" to show the back.
   // - Prevent double-clicking the same card (if this === firstCard).
@@ -78,34 +109,88 @@ function flipCard() {
   // - Otherwise, set secondCard, lock (noFlipping = true), and call checkForMatch().
 
   // Your code here ↓
+  if (noFlipping) {
+    return;
+  }
+
+  if (this === firstCard) {
+    return;
+  }
+
+
+  this.classList.add("flipped");
+
+  if (!firstCard) {
+    firstCard = this;
+    return;
+  }
+
+  secondCard = this;
+  noFlipping = true;
+  checkForMatch();
 }
 
 // ------------- TODO #4: Decide match vs unflip -------------
 function checkForMatch() {
-  // Compute isMatch by comparing dataset.name on firstCard and secondCard.
+    // Compute isMatch by comparing dataset.name on firstCard and secondCard.
   // If match -> call matchCards(); else -> call unflipCards().
   // Your code here ↓
+  const isMatch = firstCard.dataset.name === secondCard.dataset.name;
+
+  if (isMatch) {
+    matchCards();
+  } else {
+    unflipCards();
+  }
 }
+
 
 // ------------- TODO #5: Handle unflip + tries + lose -------------
 function unflipCards() {
-  // After ~900ms:
+    // After ~900ms:
   // - decrement triesRemaining; update counter text
   // - if triesRemaining === 0 -> show loss overlay (showImageOverlay()) and return
   // - otherwise remove "flipped" from both cards
   // - call resetFlags()
 
   // Your code here ↓
+  setTimeout(() => {
+    triesRemaining--;
+    counter.textContent = triesRemaining;
+
+    if (triesRemaining === 0) {
+      showImageOverlay();
+      return;
+    }
+
+    firstCard.classList.remove('flipped');
+    secondCard.classList.remove('flipped');
+    resetFlags();
+  }, 900);
 }
 
 // ------------- TODO #6: Handle match + win -------------
 function matchCards() {
-  // - Decrement winCounter. If 0 -> trigger win (alert + falling stars for 5s).
+    // - Decrement winCounter. If 0 -> trigger win (alert + falling stars for 5s).
   // - Remove click listeners from both cards (they should remain flipped).
   // - Set a green background on matched pairs (setCardBackground(card, "greenyellow")).
   // - Reset flags.
 
   // Your code here ↓
+  winCounter--;
+
+  firstCard.removeEventListener('click', flipCard);
+  secondCard.removeEventListener('click', flipCard);
+  setCardBackground(firstCard, "greenyellow");
+  setCardBackground(secondCard, "greenyellow");
+  
+  resetFlags();
+
+  if (winCounter === 0) {
+        alert("Congratulations, you won!");
+        const starInterval = setInterval(createStar, 50);
+        setTimeout(() => clearInterval(starInterval), 5000);
+  }
 }
 
 // Utility: set matched background color on the "back" face
@@ -122,9 +207,23 @@ function resetFlags() {
 
 // ------------- TODO #7: Loss overlay -------------
 function showImageOverlay() {
-  // Create <div class="image-overlay"><img src="./images/loser.svg" alt="You lost"></div>
+    // Create <div class="image-overlay"><img src="./images/loser.svg" alt="You lost"></div>
   // Append to body, then next frame set opacity to 1.
   // Your code here ↓
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'image-overlay';
+
+  const image = document.createElement('img');
+  image.src = './images/loser.svg';
+  image.alt = 'You lost';
+  
+  overlay.appendChild(image);
+  document.body.appendChild(overlay);
+
+  requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+  });
 }
 
 // Celebration stars (provided)
